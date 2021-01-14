@@ -28,7 +28,7 @@
 
 (defn build-sets [rows]
   (for [row rows]
-    #(is-tree? row %)))
+    (partial is-tree? row)))
 
 (defn compute [right down sets]
   (for [r (range down (count sets))
