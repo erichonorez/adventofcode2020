@@ -13,7 +13,7 @@
 (defn convert [xs]
   (->> (for [k (keys xs)]
          (let [row (k xs)]
-           (map (fn [v] {v #{k}}) row)))
+           (map (fn [v] {(:bag v) #{k}}) row)))
        flatten
        (apply merge-with into)))
 
@@ -32,27 +32,64 @@
         bags-parts (rest parts)
         normalized-container (str/replace container-part #"\s" "-")
         normalized-bags (->> bags-parts
-                             (map #(str/replace % #"^\d\s" ""))
-                             (map #(str/replace % #"\s" "-")))]
-    {(keyword normalized-container) (set (map keyword normalized-bags))}))
+                             (map #(re-matches #"(\d{1})\s(\w+\s\w+)" %))
+                             (map rest)
+                             (map #(vector (Integer/parseInt (first %)) (keyword (str/replace (second %) #"\s" "-"))))
+                             (map #(hash-map :bag (second %) :quantity (first %))))]
+    {(keyword normalized-container) normalized-bags}))
 
 (defn parse-bags [bags]
   (->> (map parse-text bags)
        (reduce into)))
 
 (defn execute-example! []
-    (->> (slurp "/Users/eric/Developments/adventofcode2020/resources/day7/example.txt")
-         str/split-lines
-         (map clean-line)
-         parse-bags
-         convert
-         (#(compute % [:shiny-gold]))))
+  (->> (slurp "/Users/eric/Developments/adventofcode2020/resources/day7/example.txt")
+       str/split-lines
+       (map clean-line)
+       parse-bags
+       convert
+       (#(compute % [:shiny-gold]))))
 
 (defn execute-part-1! []
   (count
-    (->> (slurp "/Users/eric/Developments/adventofcode2020/resources/day7/input.txt")
-         str/split-lines
-         (map clean-line)
-         parse-bags
-         convert
-         (#(compute % [:shiny-gold])))))
+   (->> (slurp "/Users/eric/Developments/adventofcode2020/resources/day7/input.txt")
+        str/split-lines
+        (map clean-line)
+        parse-bags
+        convert
+        (#(compute % [:shiny-gold])))))
+
+(defn convert-part-2 [bags key quantity]
+  (let [sub-bags (key bags)
+        tree (for [{bag :bag
+                    quantity :quantity} sub-bags]
+               (convert-part-2 bags bag quantity))]
+    {:bag key
+     :quantity quantity
+     :bags tree}))
+
+(defn compute-part-2 [xs]
+  (->> (for [{bag :bag quantity :quantity bags :bags} xs]
+         (+ quantity
+            (* quantity
+               (if (< (count bags) 1)
+                 0
+                 (compute-part-2 bags)))))
+       (reduce +)))
+
+(defn execute-example-2! []
+  (->> (slurp "/Users/eric/Developments/adventofcode2020/resources/day7/example-2.txt")
+       str/split-lines
+       (map clean-line)
+       parse-bags
+       (#(convert-part-2 % :shiny-gold nil))
+       (#(compute-part-2 (:bags %)))))
+
+
+(defn execute-part-2! []
+     (->> (slurp "/Users/eric/Developments/adventofcode2020/resources/day7/input.txt")
+          str/split-lines
+          (map clean-line)
+          parse-bags
+          (#(convert-part-2 % :shiny-gold nil))
+          (#(compute-part-2 (:bags %)))))
