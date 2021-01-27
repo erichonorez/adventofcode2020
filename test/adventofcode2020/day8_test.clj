@@ -64,7 +64,7 @@
                                    (day8/->Instruction :acc 6)] #{} 0))))))
 
 (deftest test-generate-alt-programs
-  (is (= (map #(map (into {} %)) '([(day8/->Instruction :jmp 0)
+  (is (= '([(day8/->Instruction :jmp 0)
             (day8/->Instruction :acc 1)
             (day8/->Instruction :jmp 4)
             (day8/->Instruction :acc 3)
