@@ -26,32 +26,26 @@
         diff-threes (filter #(= 3 %) ds)]
     (* (count diff-ones) (count diff-threes))))
 
-(defn split-by [pred coll]
-  (lazy-seq
-   (when-let [s (seq coll)]
-     (let [!pred (complement pred)
-           [xs ys] (split-with !pred s)]
-       (if (seq xs)
-         (cons xs (split-by pred ys))
-         (let [skip (take-while pred s)
-               others (drop-while pred s)
-               [xs ys] (split-with !pred others)]
-           (cons (concat skip xs)
-                 (split-by pred ys))))))))
+;; https://github.com/callum-oakley/advent-of-code-2020/blob/master/src/day_10.clj
+(defn part-2 [adapters]
+  (let [device (+ (apply max adapters) 3)
+        routes (reduce
+                (fn [r a]
+                  (assoc r a
+                         (apply + (map #(get r % 0) (range (- a 3) a)))))
+                {0 1}
+                (sort (conj adapters device)))]
+    (get routes device)))
 
-(defn arrangments
-  [coll]
-  (let [jolts (complete-jolts coll)
-        ds (diffs [] jolts)]
-    (->> (split-by (partial = 3) ds)
-         (#(map (fn [xs] (filter (partial = 1) xs)) %))
-         (#(map count %))
-         (filter #(not (= 0 %)))
-         (reduce *))))
+(def data
+  (->> (slurp "/Users/eric/Developments/adventofcode2020/resources/day10/part-1.txt")
+       str/split-lines
+       (map read-string)))
 
 (defn execute-part-1!
   []
-  (->> (slurp "/Users/eric/Developments/adventofcode2020/resources/day10/part-1.txt")
-       str/split-lines
-       (map #(Integer/parseInt %))
-       part-1))
+  (part-1 data))
+
+(defn execute-part-2!
+  []
+  (part-2 data))
